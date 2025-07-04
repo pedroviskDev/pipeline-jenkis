@@ -1,11 +1,18 @@
 // Jenkinsfile
 // Este script define o pipeline de CI/CD para o projeto Python.
 
-// Define que o pipeline será executado em qualquer agente disponível.
-// Como o container Jenkins principal (master) foi iniciado com acesso ao Docker do host,
-// ele será capaz de executar os comandos Docker necessários.
+// Define que o pipeline será executado em um agente Docker.
+// Usamos a imagem 'docker:latest' que já vem com o cliente Docker CLI.
+// Isso permite que o Jenkins execute comandos 'docker' diretamente dentro deste agente.
 pipeline {
-    agent any // Alterado de 'docker { ... }' para 'any'
+    agent {
+        docker {
+            image 'docker:latest' // Alterado para uma imagem que contém o Docker CLI
+            // Monta o socket do Docker do host para que o agente possa interagir com o daemon Docker do host.
+            // Isso é essencial para que o agente possa construir e gerenciar outros containers Docker.
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     // Opções globais para o pipeline
     options {
