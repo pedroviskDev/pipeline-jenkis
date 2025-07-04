@@ -1,0 +1,15 @@
+# Dockerfile.build
+# Imagem base com Python 3.9 
+FROM python:3.9-slim-buster
+
+# Define o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copia o arquivo de requisitos para o container
+COPY requirements.txt .
+
+# Instala as dependências Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+CMD ["tail", "-f", "/dev/null"]
