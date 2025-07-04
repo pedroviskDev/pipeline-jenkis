@@ -5,10 +5,11 @@ pipeline {
     agent {
         docker {
             image 'docker:latest'
-            // **NOVO:** Passa a variável de ambiente DOCKER_HOST para o container do agente.
+            // Passa a variável de ambiente DOCKER_HOST para o container do agente.
             // Isso permite que o agente se conecte ao daemon Docker do host via TCP.
-            // Removemos a montagem de volume do socket aqui, pois DOCKER_HOST a substitui para o agente.
-            args '-e DOCKER_HOST=tcp://host.docker.internal:2375'
+            // **NOVO:** Adiciona --user=0 (root) aos argumentos do comando docker run para o agente.
+            // Isso resolve o problema de permissão para criar diretórios como /.docker.
+            args '-e DOCKER_HOST=tcp://host.docker.internal:2375 --user=0'
         }
     }
 
@@ -29,7 +30,7 @@ pipeline {
         // Define o nome da imagem Docker para os testes.
         // O Jenkins irá construir esta imagem a partir do Dockerfile.test.
         TEST_IMAGE = 'temperature-converter-python-test'
-        // **IMPORTANTE:** Define DOCKER_HOST também como variável de ambiente para as etapas internas.
+        // IMPORTANTE: Define DOCKER_HOST também como variável de ambiente para as etapas internas.
         // Isso garante que os comandos 'docker.image(...).inside(...)' também usem a conexão TCP.
         DOCKER_HOST = 'tcp://host.docker.internal:2375'
     }
@@ -99,7 +100,7 @@ pipeline {
 
     // Seções de Post-build (executadas após todas as stages)
     post {
-        // Sempre executa, independentamente do resultado do pipeline.
+        // Sempre executa, independentemente do resultado do pipeline.
         always {
             echo "Pipeline concluído."
             // Limpa as imagens Docker criadas para evitar acúmulo.
