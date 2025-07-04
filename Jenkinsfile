@@ -5,10 +5,7 @@ pipeline {
     agent {
         docker {
             image 'docker:latest'
-            // Passa a variável de ambiente DOCKER_HOST para o container do agente.
-            // Isso permite que o agente se conecte ao daemon Docker do host via TCP.
-            // **NOVO:** Adiciona --user=0 (root) aos argumentos do comando docker run para o agente.
-            // Isso resolve o problema de permissão para criar diretórios como /.docker.
+
             args '-e DOCKER_HOST=tcp://host.docker.internal:2375 --user=0'
         }
     }
@@ -18,20 +15,13 @@ pipeline {
         // Define um tempo limite de 10 minutos para o pipeline, para evitar que ele fique preso.
         timeout(time: 10, unit: 'MINUTES')
         // Limpa o workspace antes de cada execução para garantir um ambiente limpo.
-        // O checkout será feito manualmente para garantir que os Dockerfiles estejam presentes.
         skipDefaultCheckout()
     }
 
     // Declaração de variáveis de ambiente que serão usadas ao longo do pipeline.
     environment {
-        // Define o nome da imagem Docker para o build.
-        // O Jenkins irá construir esta imagem a partir do Dockerfile.build.
         BUILD_IMAGE = 'temperature-converter-python-build'
-        // Define o nome da imagem Docker para os testes.
-        // O Jenkins irá construir esta imagem a partir do Dockerfile.test.
         TEST_IMAGE = 'temperature-converter-python-test'
-        // IMPORTANTE: Define DOCKER_HOST também como variável de ambiente para as etapas internas.
-        // Isso garante que os comandos 'docker.image(...).inside(...)' também usem a conexão TCP.
         DOCKER_HOST = 'tcp://host.docker.internal:2375'
     }
 
@@ -42,8 +32,6 @@ pipeline {
             steps {
                 script {
                     echo "Clonando o repositório GitHub..."
-                    // Clona o repositório GitHub para o workspace do Jenkins.
-                    // O 'scm' refere-se à configuração de SCM (Source Code Management) definida no job do Jenkins.
                     checkout scm
                 }
             }
@@ -54,14 +42,9 @@ pipeline {
             steps {
                 script {
                     echo "Construindo a imagem Docker para o build: ${BUILD_IMAGE}"
-                    // Constrói a imagem Docker para o build usando o Dockerfile.build.
-                    // O '.' indica que o Dockerfile está no diretório atual (workspace do Jenkins).
-                    // O comando 'docker build' agora usará o DOCKER_HOST definido no ambiente.
                     docker.build BUILD_IMAGE, '-f Dockerfile.build .'
 
                     echo "Construindo a imagem Docker para o teste: ${TEST_IMAGE}"
-                    // Constrói a imagem Docker para o teste usando o Dockerfile.test.
-                    // O comando 'docker build' agora usará o DOCKER_HOST definido no ambiente.
                     docker.build TEST_IMAGE, '-f Dockerfile.test .'
                 }
             }
@@ -73,9 +56,6 @@ pipeline {
               script {
                   echo "Iniciando a execução dos testes dentro do container Docker..."
 
-                  // SIMPLESMENTE EXECUTE A IMAGEM!
-                  // Não precisamos mais de .inside() ou -v, pois o código já está na imagem.
-                  // O comando "pytest tests/" será executado automaticamente por causa do CMD no Dockerfile.
                   docker.image(TEST_IMAGE).run()
 
                   echo "Execução dos testes concluída."
@@ -92,7 +72,6 @@ pipeline {
             // Limpa as imagens Docker criadas para evitar acúmulo.
             script {
                 try {
-                    // Os comandos 'docker rmi' também usarão o DOCKER_HOST definido.
                     sh "docker rmi ${BUILD_IMAGE} ${TEST_IMAGE}"
                 } catch (Exception e) {
                     echo "Erro ao remover imagens Docker: ${e.getMessage()}"

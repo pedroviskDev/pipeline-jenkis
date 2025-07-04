@@ -12,13 +12,9 @@ COPY requirements.txt .
 # Instala as dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- ADICIONE ESTAS LINHAS ---
-# Copia o código da sua aplicação para dentro da imagem
 COPY ./app ./app
 
-# Copia os seus testes para dentro da imagem
+# Copia os testes para dentro da imagem
 COPY ./tests ./tests
-# --- FIM DA ADIÇÃO ---
 
-# Define o comando padrão para executar os testes quando o contêiner rodar
 CMD ["pytest", "tests/"]

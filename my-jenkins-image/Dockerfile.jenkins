@@ -1,5 +1,4 @@
 # Dockerfile.jenkins
-# Imagem base oficial do Jenkins LTS com JDK 17
 FROM jenkins/jenkins:lts-jdk17
 
 # Troca para o usuário root temporariamente para instalar pacotes
