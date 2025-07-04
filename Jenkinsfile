@@ -1,25 +1,19 @@
 // Jenkinsfile
 // Este script define o pipeline de CI/CD para o projeto Python.
 
-// Define que o pipeline será executado em um agente Docker.
-// Isso significa que o Jenkins usará o Docker para criar e gerenciar os ambientes para cada etapa.
+// Define que o pipeline será executado em qualquer agente disponível.
+// Como o container Jenkins principal (master) foi iniciado com acesso ao Docker do host,
+// ele será capaz de executar os comandos Docker necessários.
 pipeline {
-    // Agente global para o pipeline.
-    // Usamos uma imagem Docker com Git e Docker CLI para que o Jenkins possa clonar o repo
-    // e interagir com o daemon Docker na máquina host.
-    agent {
-        docker {
-            image 'jenkins/jnlp-agent-maven:latest' // Esta imagem tem Git e Docker CLI. Não se preocupe com o 'maven' no nome, ela serve para o propósito.
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // Permite ao container do Jenkins interagir com o Docker do host
-        }
-    }
+    agent any // Alterado de 'docker { ... }' para 'any'
 
     // Opções globais para o pipeline
     options {
         // Define um tempo limite de 10 minutos para o pipeline, para evitar que ele fique preso.
         timeout(time: 10, unit: 'MINUTES')
         // Limpa o workspace antes de cada execução para garantir um ambiente limpo.
-        skipDefaultCheckout() // Vamos fazer o checkout manualmente para garantir que os Dockerfiles estejam presentes
+        // O checkout será feito manualmente para garantir que os Dockerfiles estejam presentes.
+        skipDefaultCheckout()
     }
 
     // Declaração de variáveis de ambiente que serão usadas ao longo do pipeline.
