@@ -5,11 +5,10 @@ pipeline {
     agent {
         docker {
             image 'docker:latest'
-            // Monta o socket do Docker do host para que o agente possa interagir com o daemon Docker do host.
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-            // **NOVO:** Explicitamente define o usuário para 'root' (UID 0) dentro do container do agente.
-            // Isso é crucial para resolver os problemas de permissão para 'mkdir /.docker' e acesso ao socket.
-            user '0' // Ou 'root'. '0' é o UID do usuário root.
+            // **NOVO:** Passa a variável de ambiente DOCKER_HOST para o container do agente.
+            // Isso permite que o agente se conecte ao daemon Docker do host via TCP.
+            // Removemos a montagem de volume do socket aqui, pois DOCKER_HOST a substitui para o agente.
+            args '-e DOCKER_HOST=tcp://host.docker.internal:2375'
         }
     }
 
@@ -30,6 +29,9 @@ pipeline {
         // Define o nome da imagem Docker para os testes.
         // O Jenkins irá construir esta imagem a partir do Dockerfile.test.
         TEST_IMAGE = 'temperature-converter-python-test'
+        // **IMPORTANTE:** Define DOCKER_HOST também como variável de ambiente para as etapas internas.
+        // Isso garante que os comandos 'docker.image(...).inside(...)' também usem a conexão TCP.
+        DOCKER_HOST = 'tcp://host.docker.internal:2375'
     }
 
     // Define as etapas (stages) do pipeline.
@@ -53,10 +55,12 @@ pipeline {
                     echo "Construindo a imagem Docker para o build: ${BUILD_IMAGE}"
                     // Constrói a imagem Docker para o build usando o Dockerfile.build.
                     // O '.' indica que o Dockerfile está no diretório atual (workspace do Jenkins).
+                    // O comando 'docker build' agora usará o DOCKER_HOST definido no ambiente.
                     docker.build BUILD_IMAGE, '-f Dockerfile.build .'
 
                     echo "Construindo a imagem Docker para o teste: ${TEST_IMAGE}"
                     // Constrói a imagem Docker para o teste usando o Dockerfile.test.
+                    // O comando 'docker build' agora usará o DOCKER_HOST definido no ambiente.
                     docker.build TEST_IMAGE, '-f Dockerfile.test .'
                 }
             }
@@ -68,8 +72,7 @@ pipeline {
                 script {
                     echo "Iniciando a instalação de dependências Python dentro do container Docker..."
                     // Executa o comando 'pip install' dentro de um container da imagem BUILD_IMAGE.
-                    // -v ${pwd()}:/app: Monta o diretório atual do workspace do Jenkins no /app dentro do container.
-                    // Isso permite que o container acesse o código fonte e o requirements.txt.
+                    // O 'docker.image(...).inside(...)' usará o DOCKER_HOST definido no ambiente.
                     docker.image(BUILD_IMAGE).inside("-v ${pwd()}:/app") {
                         sh 'pip install -r requirements.txt'
                     }
@@ -84,7 +87,7 @@ pipeline {
                 script {
                     echo "Iniciando a execução dos testes dentro do container Docker..."
                     // Executa o comando 'pytest' dentro de um container da imagem TEST_IMAGE.
-                    // Novamente, monta o workspace para que o container possa acessar o código e os testes.
+                    // O 'docker.image(...).inside(...)' usará o DOCKER_HOST definido no ambiente.
                     docker.image(TEST_IMAGE).inside("-v ${pwd()}:/app") {
                         sh 'pytest tests/' // Executa os testes na pasta 'tests/'
                     }
@@ -96,12 +99,13 @@ pipeline {
 
     // Seções de Post-build (executadas após todas as stages)
     post {
-        // Sempre executa, independentemente do resultado do pipeline.
+        // Sempre executa, independentamente do resultado do pipeline.
         always {
             echo "Pipeline concluído."
             // Limpa as imagens Docker criadas para evitar acúmulo.
             script {
                 try {
+                    // Os comandos 'docker rmi' também usarão o DOCKER_HOST definido.
                     sh "docker rmi ${BUILD_IMAGE} ${TEST_IMAGE}"
                 } catch (Exception e) {
                     echo "Erro ao remover imagens Docker: ${e.getMessage()}"
