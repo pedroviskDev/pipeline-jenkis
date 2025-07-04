@@ -67,34 +67,20 @@ pipeline {
             }
         }
 
-        // Etapa de Instalação de Dependências (equivalente ao "Build" em Python)
-        stage('Install Dependencies in Docker') {
-            steps {
-                script {
-                    echo "Iniciando a instalação de dependências Python dentro do container Docker..."
-                    // Executa o comando 'pip install' dentro de um container da imagem BUILD_IMAGE.
-                    // O 'docker.image(...).inside(...)' usará o DOCKER_HOST definido no ambiente.
-                    docker.image(BUILD_IMAGE).inside("-v ${pwd()}:/app") {
-                        sh 'pip install -r requirements.txt'
-                    }
-                    echo "Instalação de dependências Python concluída."
-                }
-            }
-        }
-
         // Etapa de Execução dos Testes dentro de um Container Docker
         stage('Run Tests in Docker') {
-            steps {
-                script {
-                    echo "Iniciando a execução dos testes dentro do container Docker..."
-                    // Executa o comando 'pytest' dentro de um container da imagem TEST_IMAGE.
-                    // O 'docker.image(...).inside(...)' usará o DOCKER_HOST definido no ambiente.
-                    docker.image(TEST_IMAGE).inside("-v ${pwd()}:/app") {
-                        sh 'pytest tests/' // Executa os testes na pasta 'tests/'
-                    }
-                    echo "Execução dos testes concluída."
-                }
-            }
+          steps {
+              script {
+                  echo "Iniciando a execução dos testes dentro do container Docker..."
+
+                  // SIMPLESMENTE EXECUTE A IMAGEM!
+                  // Não precisamos mais de .inside() ou -v, pois o código já está na imagem.
+                  // O comando "pytest tests/" será executado automaticamente por causa do CMD no Dockerfile.
+                  docker.image(TEST_IMAGE).run()
+
+                  echo "Execução dos testes concluída."
+              }
+          }
         }
     }
 

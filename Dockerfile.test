@@ -1,15 +1,24 @@
-# Dockerfile.test
-# Imagem base com Python 3.9 
+# Dockerfile.test - VERSÃO CORRIGIDA E COMPLETA
+
+# Imagem base com Python 3.9
 FROM python:3.9-slim-buster
 
-# Define o diretório de trabalho dentro do container
+# Define o diretório de trabalho para /app
 WORKDIR /app
 
-# Copia o arquivo de requisitos para o container
+# Copia o arquivo de requisitos primeiro (bom para o cache do Docker)
 COPY requirements.txt .
 
 # Instala as dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
+# --- ADICIONE ESTAS LINHAS ---
+# Copia o código da sua aplicação para dentro da imagem
+COPY ./app ./app
 
-CMD ["tail", "-f", "/dev/null"]
+# Copia os seus testes para dentro da imagem
+COPY ./tests ./tests
+# --- FIM DA ADIÇÃO ---
+
+# Define o comando padrão para executar os testes quando o contêiner rodar
+CMD ["pytest", "tests/"]
