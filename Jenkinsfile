@@ -56,13 +56,23 @@ pipeline {
               script {
                   echo "Iniciando a execução dos testes dentro do container Docker..."
 
-                  docker.image(TEST_IMAGE).run()
+                  // VERSÃO CORRETA PARA O CENÁRIO 3
+                  // Removemos o '-d' para que o Jenkins espere o resultado.
+                  // Adicionamos o '--rm' para autolimpeza do contêiner.
+                  // Usamos 'try/catch' para que a falha não pare a pipeline, mas a marque como instável.
+                  try {
+                      sh 'docker run --rm temperature-converter-python-test'
+                  } catch (Exception e) {
+                      // Marca o build atual como UNSTABLE
+                      currentBuild.result = 'UNSTABLE'
+                      // Opcional: imprime o erro no log
+                      echo "Os testes falharam: ${e.getMessage()}"
+                  }
 
                   echo "Execução dos testes concluída."
               }
           }
-        }
-    }
+      }
 
     // Seções de Post-build (executadas após todas as stages)
     post {
