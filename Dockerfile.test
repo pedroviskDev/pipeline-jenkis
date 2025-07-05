@@ -17,4 +17,4 @@ COPY ./app ./app
 # Copia os testes para dentro da imagem
 COPY ./tests ./tests
 
-CMD ["pytest", "tests/"]
+CMD ["pytest"]
