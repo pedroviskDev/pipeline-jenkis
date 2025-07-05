@@ -9,7 +9,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Instala as dependências Python
-RUN pip install --no-cache-dir -r requirements.txt
+RON pip install --no-cache-dir -r requirements.txt
 
 
 CMD ["tail", "-f", "/dev/null"]
