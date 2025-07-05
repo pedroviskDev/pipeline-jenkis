@@ -1,7 +1,7 @@
 # app/temperature_converter.py
 
 def fahrenheit_to_celsius(fahrenheit):
-    return (fahrenheit - 32) * 5.0 / 9.0
+    return (fahrenheit - 32) * 5.0 / 9.0 + 1
 
 def celsius_to_fahrenheit(celsius):
     return celsius * 9.0 / 5.0 + 32.0
