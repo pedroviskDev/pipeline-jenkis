@@ -6,6 +6,8 @@ FROM python:3.9-slim-buster
 # Define o diretório de trabalho para /app
 WORKDIR /app
 
+ENV PYTHONPATH=/app
+
 # Copia o arquivo de requisitos primeiro (bom para o cache do Docker)
 COPY requirements.txt .
 
