@@ -73,6 +73,7 @@ pipeline {
               }
           }
       }
+    }
 
     // Seções de Post-build (executadas após todas as stages)
     post {
@@ -82,6 +83,7 @@ pipeline {
             // Limpa as imagens Docker criadas para evitar acúmulo.
             script {
                 try {
+
                     sh "docker rmi ${BUILD_IMAGE} ${TEST_IMAGE}"
                 } catch (Exception e) {
                     echo "Erro ao remover imagens Docker: ${e.getMessage()}"
